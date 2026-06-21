@@ -4,19 +4,22 @@ package ore
 advance :: proc {
 	tok_advance,
 	node_advance,
+	matcher_advance,
 }
 
 consume :: proc {
 	node_consume,
 }
 
+current :: proc {
+	node_current,
+	matcher_current,
+}
+
 is_at_end :: proc {
 	tok_is_at_end,
 	node_is_at_end,
-}
-
-current :: proc {
-	node_current,
+	matcher_is_at_end,
 }
 
 tok_advance :: proc(tokens: ^[dynamic]Token, offset: ^int) -> Maybe(rune) {
@@ -49,4 +52,16 @@ node_current :: proc(p: ^Parser) -> Token {
 
 node_is_at_end :: proc(p: ^Parser) -> bool {
 	return p.tokens[p.current].typ == TokenTyp.End
+}
+
+matcher_advance :: proc(matcher: ^Matcher) {
+	matcher.pos += 1
+}
+
+matcher_current :: proc(matcher: ^Matcher) -> rune {
+	return cast(rune)matcher.input[matcher.pos]
+}
+
+matcher_is_at_end :: proc(matcher: ^Matcher) -> bool {
+	return cast(int)matcher.pos >= len(matcher.input)
 }

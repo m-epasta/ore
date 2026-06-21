@@ -1,3 +1,4 @@
+#+private
 package ore
 
 Parser :: struct {
