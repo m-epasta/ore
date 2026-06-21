@@ -1,8 +1,6 @@
 #+private
 package ore
 
-import "core:fmt"
-
 TokenTyp :: enum {
 	Wildcard, // .
 	Lparen, // (
@@ -27,58 +25,55 @@ Token :: struct {
 
 // Returns the Parser since it is simply a tokens wrapper
 tokenize :: proc(match: string) -> Parser {
-	tokens := new([dynamic]Token)
-	offset := 0
+	tokens: [dynamic]Token
+	i := 0
 
-	for !is_at_end(tokens, offset) {
-		c, ok := advance(tokens, &offset).?
-		if !ok do break
+	for i < len(match) {
+		r := rune(match[i])
 
-		switch c {
+		switch r {
 		case '.':
-			append(tokens, Token{typ = .Wildcard, rune = '.'})
+			append(&tokens, Token{typ = .Wildcard, rune = '.'})
 		case '(':
-			append(tokens, Token{typ = .Lparen, rune = '('})
+			append(&tokens, Token{typ = .Lparen, rune = '('})
 		case ')':
-			append(tokens, Token{typ = .Rparen, rune = ')'})
+			append(&tokens, Token{typ = .Rparen, rune = ')'})
 		case '[':
-			append(tokens, Token{typ = .Lbracket, rune = '['})
+			append(&tokens, Token{typ = .Lbracket, rune = '['})
 		case ']':
-			append(tokens, Token{typ = .Rbracket, rune = ']'})
+			append(&tokens, Token{typ = .Rbracket, rune = ']'})
 		case '+':
-			append(tokens, Token{typ = .Plus, rune = '+'})
+			append(&tokens, Token{typ = .Plus, rune = '+'})
 		case '*':
-			append(tokens, Token{typ = .Star, rune = '*'})
+			append(&tokens, Token{typ = .Star, rune = '*'})
 		case '?':
-			append(tokens, Token{typ = .Question, rune = '?'})
+			append(&tokens, Token{typ = .Question, rune = '?'})
 		case '\\':
-			if is_at_end(tokens, offset) {
-				fmt.eprintf("Expected character after \\")
-				break
+			i += 1
+			if i >= len(match) {
+				append(&tokens, Token{typ = .End})
+				return Parser{err = "expected character after '\\'", tokens = tokens}
 			}
 
-			escaped, ok := advance(tokens, &offset).?
-			if !ok {
-				fmt.eprintf("Expected character after \\")
-				break
-			}
-
+			escaped := rune(match[i])
 			switch escaped {
 			case 'd':
-				append(tokens, Token{typ = .AnyDigit})
+				append(&tokens, Token{typ = .AnyDigit})
 			case 's':
-				append(tokens, Token{typ = .AnyWhitespace})
+				append(&tokens, Token{typ = .AnyWhitespace})
 			case 'w':
-				append(tokens, Token{typ = .AnyWordChar})
+				append(&tokens, Token{typ = .AnyWordChar})
 			case:
-				append(tokens, Token{typ = .Literal, rune = escaped})
+				append(&tokens, Token{typ = .Literal, rune = escaped})
 			}
 		case:
-			append(tokens, Token{typ = .Literal, rune = c})
+			append(&tokens, Token{typ = .Literal, rune = r})
 		}
+
+		i += 1
 	}
 
-	append(tokens, Token{typ = .End})
+	append(&tokens, Token{typ = .End})
 
 	return Parser{current = 0, tokens = tokens}
 }

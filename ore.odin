@@ -1,9 +1,26 @@
 package ore
 
-matches :: proc(input: string, pattern: string) -> Maybe(bool) {
-	parser := tokenize(pattern)
-	ast, ast_ok := parse(&parser).?
-	if !ast_ok do return nil
+Error :: string
 
-	return match(&ast, input)
+matches :: proc(input: string, pattern: string) -> (ok: bool, err: Error) {
+	parser := tokenize(pattern)
+	if parser.err != "" {
+		delete(parser.tokens)
+		return false, parser.err
+	}
+
+	ast, ast_ok := parse(&parser).?
+	if !ast_ok {
+		if parser.err != "" {
+			delete(parser.tokens)
+			return false, parser.err
+		}
+		delete(parser.tokens)
+		return false, "unknown parse error"
+	}
+
+	result := match(ast, input)
+	free_node(ast)
+	delete(parser.tokens)
+	return result, ""
 }

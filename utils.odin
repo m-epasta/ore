@@ -35,8 +35,9 @@ tok_is_at_end :: proc(tokens: ^[dynamic]Token, offset: int) -> bool {
 node_advance :: proc(p: ^Parser) -> Maybe(Token) {
 	if is_at_end(p) do return nil
 
+	token := p.tokens[p.current]
 	p.current += 1
-	return p.tokens[p.current]
+	return token
 }
 
 // False means failure
