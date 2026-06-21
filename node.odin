@@ -43,23 +43,3 @@ ConcatNode :: struct {
 	using left:  ^Node,
 	using right: ^Node,
 }
-
-free_node :: proc(node: ^Node) {
-	if node == nil do return
-
-	#partial switch n in node.typ {
-	case PlusNode:
-		free_node(n.child)
-	case StarNode:
-		free_node(n.child)
-	case QuestionNode:
-		free_node(n.child)
-	case ConcatNode:
-		free_node(n.left)
-		free_node(n.right)
-	case CharacterClassNode:
-		delete(n.matches)
-	}
-
-	free(node)
-}

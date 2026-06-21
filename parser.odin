@@ -26,12 +26,14 @@ parse_concat :: proc(p: ^Parser) -> Maybe(^Node) {
 	for !is_at_end(p) && current(p).typ != TokenTyp.Rparen && current(p).typ != TokenTyp.Rbracket {
 		right, right_ok := parse_factor(p).?
 		if !right_ok {
-			free_node(left)
 			return nil
 		}
 
-		node := new(Node)
-		node.typ = ConcatNode{left = left, right = right}
+		node := new(Node, context.temp_allocator)
+		node.typ = ConcatNode {
+			left  = left,
+			right = right,
+		}
 		left = node
 	}
 
@@ -51,18 +53,24 @@ parse_factor :: proc(p: ^Parser) -> Maybe(^Node) {
 		#partial switch current(p).typ {
 		case .Plus:
 			if !consume(p, TokenTyp.Plus) do return nil
-			node := new(Node)
-			node.typ = PlusNode{child = child}
+			node := new(Node, context.temp_allocator)
+			node.typ = PlusNode {
+				child = child,
+			}
 			child = node
 		case .Star:
 			if !consume(p, TokenTyp.Star) do return nil
-			node := new(Node)
-			node.typ = StarNode{child = child}
+			node := new(Node, context.temp_allocator)
+			node.typ = StarNode {
+				child = child,
+			}
 			child = node
 		case .Question:
 			if !consume(p, TokenTyp.Question) do return nil
-			node := new(Node)
-			node.typ = QuestionNode{child = child}
+			node := new(Node, context.temp_allocator)
+			node.typ = QuestionNode {
+				child = child,
+			}
 			child = node
 		case:
 			return child
@@ -81,30 +89,31 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 
 	#partial switch token.typ {
 	case .Wildcard:
-		node := new(Node)
+		node := new(Node, context.temp_allocator)
 		node.typ = WildcardNode{}
 		return node
 	case .AnyDigit:
-		node := new(Node)
+		node := new(Node, context.temp_allocator)
 		node.typ = AnyDigitNode{}
 		return node
 	case .AnyWordChar:
-		node := new(Node)
+		node := new(Node, context.temp_allocator)
 		node.typ = AnyWordCharNode{}
 		return node
 	case .AnyWhitespace:
-		node := new(Node)
+		node := new(Node, context.temp_allocator)
 		node.typ = AnyWhitespaceNode{}
 		return node
 	case .Literal:
-		node := new(Node)
-		node.typ = LiteralNode{char = token.rune}
+		node := new(Node, context.temp_allocator)
+		node.typ = LiteralNode {
+			char = token.rune,
+		}
 		return node
 	case .Lparen:
 		node, ok := parse_concat(p).?
 		if !ok do return nil
 		if !consume(p, TokenTyp.Rparen) {
-			free_node(node)
 			p.err = "expected ')'"
 			return nil
 		}
@@ -132,7 +141,7 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 			return nil
 		}
 
-		node := new(Node)
+		node := new(Node, context.temp_allocator)
 		node.typ = char_node
 		return node
 	case:

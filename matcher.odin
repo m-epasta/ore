@@ -10,8 +10,7 @@ Matcher :: struct {
 }
 
 match :: proc(ast: ^Node, input: string) -> bool {
-	matcher := new(Matcher)
-	defer free(matcher)
+	matcher := new(Matcher, context.temp_allocator)
 
 	matcher.input = input
 	matcher.pos = 0

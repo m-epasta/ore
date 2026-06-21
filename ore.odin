@@ -20,7 +20,6 @@ matches :: proc(input: string, pattern: string) -> (ok: bool, err: Error) {
 	}
 
 	result := match(ast, input)
-	free_node(ast)
 	delete(parser.tokens)
 	return result, ""
 }
