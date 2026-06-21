@@ -3,6 +3,7 @@ package ore
 
 TokenTyp :: enum {
 	Wildcard, // .
+	Caret, // ^
 	Lparen, // (
 	Rparen, // )
 	Lbracket, // [
@@ -11,8 +12,11 @@ TokenTyp :: enum {
 	Star, // *
 	Question, // ?
 	AnyDigit, // \d
-	AnyWordChar, // \w
 	AnyWhitespace, // \s
+	AnyWordChar, // \w
+	EverythingButDigit, // \D
+	EverythingButWhitespace, // \S
+	EverythingButWordChar, // \W
 	Literal,
 	End,
 }
@@ -34,6 +38,8 @@ tokenize :: proc(match: string) -> Parser {
 		switch r {
 		case '.':
 			append(&tokens, Token{typ = .Wildcard, rune = '.'})
+		case '^':
+			append(&tokens, Token{typ = .Caret})
 		case '(':
 			append(&tokens, Token{typ = .Lparen, rune = '('})
 		case ')':
@@ -63,6 +69,12 @@ tokenize :: proc(match: string) -> Parser {
 				append(&tokens, Token{typ = .AnyWhitespace})
 			case 'w':
 				append(&tokens, Token{typ = .AnyWordChar})
+			case 'D':
+				append(&tokens, Token{typ = .EverythingButDigit})
+			case 'S':
+				append(&tokens, Token{typ = .EverythingButWhitespace})
+			case 'W':
+				append(&tokens, Token{typ = .EverythingButWordChar})
 			case:
 				append(&tokens, Token{typ = .Literal, rune = escaped})
 			}

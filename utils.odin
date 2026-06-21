@@ -1,6 +1,8 @@
 #+private
 package ore
 
+import "core:unicode/utf8"
+
 advance :: proc {
 	tok_advance,
 	node_advance,
@@ -56,11 +58,13 @@ node_is_at_end :: proc(p: ^Parser) -> bool {
 }
 
 matcher_advance :: proc(matcher: ^Matcher) {
-	matcher.pos += 1
+	_, w := utf8.decode_rune(matcher.input[matcher.pos:])
+	matcher.pos += uintptr(w)
 }
 
 matcher_current :: proc(matcher: ^Matcher) -> rune {
-	return cast(rune)matcher.input[matcher.pos]
+	r, _ := utf8.decode_rune(matcher.input[matcher.pos:])
+	return r
 }
 
 matcher_is_at_end :: proc(matcher: ^Matcher) -> bool {

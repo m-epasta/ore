@@ -14,6 +14,9 @@ TypeNode :: union {
 	AnyWhitespaceNode,
 	AnyWordCharNode,
 	CharacterClassNode,
+	EveythingButDigitNode,
+	EverythingButWhitespaceNode,
+	EverythingButWordCharNode,
 	PlusNode,
 	StarNode,
 	QuestionNode,
@@ -27,8 +30,12 @@ LiteralNode :: struct {
 AnyDigitNode :: struct {}
 AnyWhitespaceNode :: struct {}
 AnyWordCharNode :: struct {}
+EveythingButDigitNode :: struct {}
+EverythingButWhitespaceNode :: struct {}
+EverythingButWordCharNode :: struct {}
 CharacterClassNode :: struct {
 	matches: [dynamic]rune,
+	neg:     bool,
 }
 PlusNode :: struct {
 	using child: ^Node,

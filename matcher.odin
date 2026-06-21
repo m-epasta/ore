@@ -10,14 +10,15 @@ Matcher :: struct {
 }
 
 match :: proc(ast: ^Node, input: string) -> bool {
-	matcher := new(Matcher, context.temp_allocator)
+	for i in 0 ..< len(input) {
+		matcher := new(Matcher, context.temp_allocator)
+		matcher.input = input
+		matcher.pos = uintptr(i)
 
-	matcher.input = input
-	matcher.pos = 0
+		if match_node(matcher, ast) do return true
+	}
 
-	if !match_node(matcher, ast) do return false
-
-	return is_at_end(matcher)
+	return false
 }
 
 match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
@@ -34,6 +35,12 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchAnyWhitespaceNode(matcher, &typ)
 	case CharacterClassNode:
 		return matchCharacterClassNode(matcher, &typ)
+	case EveythingButDigitNode:
+		return matchEverythingButDigitNode(matcher, &typ)
+	case EverythingButWhitespaceNode:
+		return matchEverythingButWhitespaceNode(matcher, &typ)
+	case EverythingButWordCharNode:
+		return matchEverythingButWordCharNode(matcher, &typ)
 	case PlusNode:
 		return matchPlusNode(matcher, &typ)
 	case StarNode:
@@ -62,28 +69,63 @@ matchLiteralNode :: proc(matcher: ^Matcher, node: ^LiteralNode) -> bool {
 }
 
 matchAnyDigitNode :: proc(matcher: ^Matcher, node: ^AnyDigitNode) -> bool {
-	if is_at_end(matcher) || libc.isdigit(cast(i32)current(matcher)) != 0 do return false
+	if is_at_end(matcher) || libc.isdigit(cast(i32)current(matcher)) == 0 do return false
 
 	advance(matcher)
 	return true
 }
 
 matchAnyWhitespaceNode :: proc(matcher: ^Matcher, node: ^AnyWhitespaceNode) -> bool {
-	if is_at_end(matcher) || libc.isspace(cast(i32)current(matcher)) != 0 do return false
+	if is_at_end(matcher) || libc.isspace(cast(i32)current(matcher)) == 0 do return false
 
 	advance(matcher)
 	return true
 }
 
 matchAnyWordCharNode :: proc(matcher: ^Matcher, node: ^AnyWordCharNode) -> bool {
-	if is_at_end(matcher) || libc.isalpha(cast(i32)current(matcher)) != 0 || current(matcher) != '_' do return false
+	if is_at_end(matcher) do return false
+	c := current(matcher)
+	if libc.isalpha(cast(i32)c) == 0 && c != '_' do return false
 
 	advance(matcher)
 	return true
 }
 
 matchCharacterClassNode :: proc(matcher: ^Matcher, node: ^CharacterClassNode) -> bool {
-	if is_at_end(matcher) || !slice.contains(node.matches[:], current(matcher)) do return false
+	if node.neg == true {
+		if is_at_end(matcher) || slice.contains(node.matches[:], current(matcher)) do return false
+	} else {
+		if is_at_end(matcher) || !slice.contains(node.matches[:], current(matcher)) do return false
+	}
+
+	advance(matcher)
+	return true
+}
+
+matchEverythingButDigitNode :: proc(matcher: ^Matcher, node: ^EveythingButDigitNode) -> bool {
+	if is_at_end(matcher) || libc.isdigit(cast(i32)current(matcher)) != 0 do return false
+
+	advance(matcher)
+	return true
+}
+
+matchEverythingButWhitespaceNode :: proc(
+	matcher: ^Matcher,
+	node: ^EverythingButWhitespaceNode,
+) -> bool {
+	if is_at_end(matcher) || libc.isspace(cast(i32)current(matcher)) != 0 do return false
+
+	advance(matcher)
+	return true
+}
+
+matchEverythingButWordCharNode :: proc(
+	matcher: ^Matcher,
+	node: ^EverythingButWordCharNode,
+) -> bool {
+	if is_at_end(matcher) do return false
+	c := current(matcher)
+	if libc.isalpha(cast(i32)c) != 0 || c == '_' do return false
 
 	advance(matcher)
 	return true

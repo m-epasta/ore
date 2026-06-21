@@ -104,6 +104,18 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		node := new(Node, context.temp_allocator)
 		node.typ = AnyWhitespaceNode{}
 		return node
+	case .EverythingButDigit:
+		node := new(Node, context.temp_allocator)
+		node.typ = EveythingButDigitNode{}
+		return node
+	case .EverythingButWhitespace:
+		node := new(Node, context.temp_allocator)
+		node.typ = EverythingButWhitespaceNode{}
+		return node
+	case .EverythingButWordChar:
+		node := new(Node, context.temp_allocator)
+		node.typ = EverythingButWordCharNode{}
+		return node
 	case .Literal:
 		node := new(Node, context.temp_allocator)
 		node.typ = LiteralNode {
@@ -119,7 +131,10 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		}
 		return node
 	case .Lbracket:
-		char_node := CharacterClassNode{}
+		char_node := CharacterClassNode {
+			neg     = false,
+			matches = make([dynamic]rune, context.temp_allocator),
+		}
 		for current(p).typ != TokenTyp.Rbracket {
 			tok, ok := advance(p).?
 			if !ok {
@@ -127,12 +142,17 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 				p.err = "expected ']'"
 				return nil
 			}
-			if tok.typ != TokenTyp.Literal {
+			#partial switch tok.typ {
+			case .Caret:
+				if len(char_node.matches) == 0 do char_node.neg = true
+				else do append(&char_node.matches, tok.rune)
+			case .Literal:
+				append(&char_node.matches, tok.rune)
+			case:
 				delete(char_node.matches)
 				p.err = "expected literal character in character class"
 				return nil
 			}
-			append(&char_node.matches, tok.rune)
 		}
 
 		if !consume(p, TokenTyp.Rbracket) {
