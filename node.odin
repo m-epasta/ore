@@ -20,6 +20,7 @@ TypeNode :: union {
 	PlusNode,
 	StarNode,
 	QuestionNode,
+	RangeRepNode,
 	ConcatNode,
 }
 
@@ -44,6 +45,11 @@ StarNode :: struct {
 	using child: ^Node,
 }
 QuestionNode :: struct {
+	using child: ^Node,
+}
+RangeRepNode :: struct {
+	from:        int,
+	to:          int,
 	using child: ^Node,
 }
 ConcatNode :: struct {

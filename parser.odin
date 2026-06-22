@@ -1,6 +1,8 @@
 #+private
 package ore
 
+import "core:c/libc"
+
 Parser :: struct {
 	current: uintptr,
 	tokens:  [dynamic]Token,
@@ -71,6 +73,44 @@ parse_factor :: proc(p: ^Parser) -> Maybe(^Node) {
 			node.typ = QuestionNode {
 				child = child,
 			}
+			child = node
+		case .Lbrace:
+			if !consume(p, TokenTyp.Lbrace) do return nil
+
+			range_rep := RangeRepNode {
+				child = child,
+				from  = 0,
+				to    = 0,
+			}
+
+			if current(p).typ == TokenTyp.Literal {
+				r := current(p).rune
+				if libc.isdigit(i32(r)) != 0 {
+					range_rep.from = int(r - '0')
+					advance(p)
+				}
+			}
+
+			if current(p).typ == TokenTyp.Comma {
+				consume(p, TokenTyp.Comma)
+				if current(p).typ == TokenTyp.Literal {
+					r := current(p).rune
+					if libc.isdigit(i32(r)) != 0 {
+						range_rep.to = int(r - '0')
+						advance(p)
+					}
+				}
+			} else {
+				range_rep.to = range_rep.from
+			}
+
+			if !consume(p, TokenTyp.Rbrace) {
+				p.err = "expected '}'"
+				return nil
+			}
+
+			node := new(Node, context.temp_allocator)
+			node.typ = range_rep
 			child = node
 		case:
 			return child
@@ -164,6 +204,9 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		node := new(Node, context.temp_allocator)
 		node.typ = char_node
 		return node
+	case .Lbrace:
+		p.err = "unexpected '{' without preceding expression"
+		return nil
 	case:
 		p.err = "unexpected token"
 		return nil

@@ -47,6 +47,8 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchStarNode(matcher, &typ)
 	case QuestionNode:
 		return matchQuestionNode(matcher, &typ)
+	case RangeRepNode:
+		return matchRangeRepNode(matcher, &typ)
 	case ConcatNode:
 		return matchConcatNode(matcher, &typ)
 	}
@@ -145,6 +147,26 @@ matchStarNode :: proc(matcher: ^Matcher, node: ^StarNode) -> bool {
 
 matchQuestionNode :: proc(matcher: ^Matcher, node: ^QuestionNode) -> bool {
 	try_match_rep(matcher, node.child)
+
+	return true
+}
+
+matchRangeRepNode :: proc(matcher: ^Matcher, node: ^RangeRepNode) -> bool {
+	for _ in 0 ..< node.from {
+		if !try_match_rep(matcher, node.child) {
+			return false
+		}
+	}
+
+	if node.to > 0 {
+		for _ in node.from ..< node.to {
+			if !try_match_rep(matcher, node.child) {
+				break
+			}
+		}
+	} else {
+		for try_match_rep(matcher, node.child) {}
+	}
 
 	return true
 }

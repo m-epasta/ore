@@ -1,7 +1,7 @@
-default: build
+default: check
 
-build:
-    @odin build .
+check:
+    @odin check . -no-entry-point
 
 test:
    @odin test tests

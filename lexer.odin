@@ -8,6 +8,9 @@ TokenTyp :: enum {
 	Rparen, // )
 	Lbracket, // [
 	Rbracket, // ]
+	Lbrace, // {
+	Rbrace, // }
+	Comma, // ,
 	Plus, // +
 	Star, // *
 	Question, // ?
@@ -39,7 +42,7 @@ tokenize :: proc(match: string) -> Parser {
 		case '.':
 			append(&tokens, Token{typ = .Wildcard, rune = '.'})
 		case '^':
-			append(&tokens, Token{typ = .Caret})
+			append(&tokens, Token{typ = .Caret, rune = '^'})
 		case '(':
 			append(&tokens, Token{typ = .Lparen, rune = '('})
 		case ')':
@@ -48,12 +51,18 @@ tokenize :: proc(match: string) -> Parser {
 			append(&tokens, Token{typ = .Lbracket, rune = '['})
 		case ']':
 			append(&tokens, Token{typ = .Rbracket, rune = ']'})
+		case '{':
+			append(&tokens, Token{typ = .Lbrace, rune = '{'})
+		case '}':
+			append(&tokens, Token{typ = .Rbrace, rune = '}'})
 		case '+':
 			append(&tokens, Token{typ = .Plus, rune = '+'})
 		case '*':
 			append(&tokens, Token{typ = .Star, rune = '*'})
 		case '?':
 			append(&tokens, Token{typ = .Question, rune = '?'})
+		case ',':
+			append(&tokens, Token{typ = .Comma, rune = ','})
 		case '\\':
 			i += 1
 			if i >= len(match) {
