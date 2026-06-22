@@ -6,6 +6,7 @@ TokenTyp :: enum {
 	Caret, // ^
 	Lparen, // (
 	Rparen, // )
+	Pipe, // |
 	Lbracket, // [
 	Rbracket, // ]
 	Lbrace, // {
@@ -47,6 +48,8 @@ tokenize :: proc(match: string) -> Parser {
 			append(&tokens, Token{typ = .Lparen, rune = '('})
 		case ')':
 			append(&tokens, Token{typ = .Rparen, rune = ')'})
+		case '|':
+			append(&tokens, Token{typ = .Pipe, rune = '|'})
 		case '[':
 			append(&tokens, Token{typ = .Lbracket, rune = '['})
 		case ']':

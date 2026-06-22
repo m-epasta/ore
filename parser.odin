@@ -10,8 +10,8 @@ Parser :: struct {
 }
 
 parse :: proc(p: ^Parser) -> Maybe(^Node) {
-	node, concat_ok := parse_concat(p).?
-	if !concat_ok do return nil
+	node, alt_ok := parse_alternation(p).?
+	if !alt_ok do return nil
 
 	if current(p).typ != TokenTyp.End {
 		p.err = "unexpected token after expression"
@@ -21,11 +21,39 @@ parse :: proc(p: ^Parser) -> Maybe(^Node) {
 	return node
 }
 
+parse_alternation :: proc(p: ^Parser) -> Maybe(^Node) {
+	left, ok := parse_concat(p).?
+	if !ok do return nil
+
+	if current(p).typ != TokenTyp.Pipe {
+		return left
+	}
+
+	exprs := make([dynamic]^Node, context.temp_allocator)
+	append(&exprs, left)
+
+	for current(p).typ == TokenTyp.Pipe {
+		if !consume(p, TokenTyp.Pipe) do return nil
+		right, right_ok := parse_concat(p).?
+		if !right_ok do return nil
+		append(&exprs, right)
+	}
+
+	node := new(Node, context.temp_allocator)
+	node.typ = AlternationNode {
+		exprs = exprs,
+	}
+	return node
+}
+
 parse_concat :: proc(p: ^Parser) -> Maybe(^Node) {
 	left, ok := parse_factor(p).?
 	if !ok do return nil
 
-	for !is_at_end(p) && current(p).typ != TokenTyp.Rparen && current(p).typ != TokenTyp.Rbracket {
+	for !is_at_end(p) &&
+	    current(p).typ != TokenTyp.Rparen &&
+	    current(p).typ != TokenTyp.Rbracket &&
+	    current(p).typ != TokenTyp.Pipe {
 		right, right_ok := parse_factor(p).?
 		if !right_ok {
 			return nil
@@ -163,7 +191,7 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		}
 		return node
 	case .Lparen:
-		node, ok := parse_concat(p).?
+		node, ok := parse_alternation(p).?
 		if !ok do return nil
 		if !consume(p, TokenTyp.Rparen) {
 			p.err = "expected ')'"

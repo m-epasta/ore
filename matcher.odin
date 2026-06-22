@@ -51,6 +51,8 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchRangeRepNode(matcher, &typ)
 	case ConcatNode:
 		return matchConcatNode(matcher, &typ)
+	case AlternationNode:
+		return matchAlternationNode(matcher, &typ)
 	}
 
 	return false
@@ -184,6 +186,17 @@ matchConcatNode :: proc(matcher: ^Matcher, node: ^ConcatNode) -> bool {
 	}
 
 	return true
+}
+
+matchAlternationNode :: proc(matcher: ^Matcher, node: ^AlternationNode) -> bool {
+	for expr in node.exprs {
+		start := matcher.pos
+		if match_node(matcher, expr) {
+			return true
+		}
+		matcher.pos = start
+	}
+	return false
 }
 
 try_match_rep :: proc(matcher: ^Matcher, child: ^Node) -> bool {

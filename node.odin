@@ -1,8 +1,6 @@
 #+private
 package ore
 
-// TODO: merge node_types with node
-
 Node :: struct {
 	typ: TypeNode,
 }
@@ -22,6 +20,7 @@ TypeNode :: union {
 	QuestionNode,
 	RangeRepNode,
 	ConcatNode,
+	AlternationNode,
 }
 
 WildcardNode :: struct {}
@@ -55,4 +54,7 @@ RangeRepNode :: struct {
 ConcatNode :: struct {
 	using left:  ^Node,
 	using right: ^Node,
+}
+AlternationNode :: struct {
+	exprs: [dynamic]^Node,
 }

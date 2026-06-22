@@ -248,6 +248,25 @@ quantexactormore :: proc(t: ^testing.T) {
 	testing.expect(t, !group_non, "su should not match group repetition (su){2,}")
 }
 
+@(test)
+alternation :: proc(t: ^testing.T) {
+	ok, err := ore.matches("God", "(God|Devil)")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "God should match alternation (God|Devil)")
+
+	ok2, err2 := ore.matches("God", "(God|Devil)")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "God should match alternation God|Devil")
+
+	ok3, err3 := ore.matches("H", "(God|Devil)")
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, !ok3, "H should not match alternation (God|Devil)")
+
+	ok4, err4 := ore.matches("4", "(God|Devil)")
+	testing.expect(t, err4 == "", "Expected no error")
+	testing.expect(t, !ok4, "4 should not match alternation God|Devil")
+}
+
 // Errors
 
 @(test)
