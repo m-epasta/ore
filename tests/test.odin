@@ -293,6 +293,78 @@ error_unclosed_paren :: proc(t: ^testing.T) {
 	testing.expect(t, err2 != "", "Expected error for nested unclosed paren")
 }
 
+// Capture groups & backreferences
+
+@(test)
+capture_group :: proc(t: ^testing.T) {
+	ok, err := ore.matches("a", "(a)")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(a) should match a")
+}
+
+@(test)
+backref_simple :: proc(t: ^testing.T) {
+	ok, err := ore.matches("aa", "(a)\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(a)\\1 should match aa")
+}
+
+@(test)
+backref_nomatch :: proc(t: ^testing.T) {
+	ok, err := ore.matches("ab", "(a)\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, !ok, "(a)\\1 should not match ab")
+}
+
+@(test)
+backref_greedy :: proc(t: ^testing.T) {
+	ok, err := ore.matches("abab", "(.*)\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(.*)\\1 should match abab (backreference backtracking)")
+}
+
+@(test)
+backref_greedy_empty_match :: proc(t: ^testing.T) {
+	ok, err := ore.matches("abca", "(.*)\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(.*)\\1 should match abca (empty backref match)")
+}
+
+@(test)
+backref_concat :: proc(t: ^testing.T) {
+	ok, err := ore.matches("aba", "(a*)b\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(a*)b\\1 should match aba")
+}
+
+@(test)
+backref_multiple :: proc(t: ^testing.T) {
+	ok, err := ore.matches("abab", "(a)(b)\\1\\2")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(a)(b)\\1\\2 should match abab")
+}
+
+@(test)
+backref_word_repeat :: proc(t: ^testing.T) {
+	ok, err := ore.matches("hello hello", "(\\w+)\\s+\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(\\w+)\\s+\\1 should match repeated word")
+}
+
+@(test)
+backref_word_no_repeat :: proc(t: ^testing.T) {
+	ok, err := ore.matches("hello world", "(\\w+)\\s+\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, !ok, "(\\w+)\\s+\\1 should not match different words")
+}
+
+@(test)
+backref_in_alternation :: proc(t: ^testing.T) {
+	ok, err := ore.matches("abcabc", "((a|b)*)\\1")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "((a|b)*)\\1 should match abcabc (empty backref match)")
+}
+
 @(test)
 error_unexpected_token :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", ")")

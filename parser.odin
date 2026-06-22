@@ -4,9 +4,10 @@ package ore
 import "core:c/libc"
 
 Parser :: struct {
-	current: uintptr,
-	tokens:  [dynamic]Token,
-	err:     Error,
+	current:     uintptr,
+	tokens:      [dynamic]Token,
+	err:         Error,
+	group_count: int,
 }
 
 parse :: proc(p: ^Parser) -> Maybe(^Node) {
@@ -25,9 +26,7 @@ parse_alternation :: proc(p: ^Parser) -> Maybe(^Node) {
 	left, ok := parse_concat(p).?
 	if !ok do return nil
 
-	if current(p).typ != TokenTyp.Pipe {
-		return left
-	}
+	if current(p).typ != TokenTyp.Pipe do return left
 
 	exprs := make([dynamic]^Node, context.temp_allocator)
 	append(&exprs, left)
@@ -50,21 +49,19 @@ parse_concat :: proc(p: ^Parser) -> Maybe(^Node) {
 	left, ok := parse_factor(p).?
 	if !ok do return nil
 
-	for !is_at_end(p) &&
-	    current(p).typ != TokenTyp.Rparen &&
-	    current(p).typ != TokenTyp.Rbracket &&
-	    current(p).typ != TokenTyp.Pipe {
-		right, right_ok := parse_factor(p).?
-		if !right_ok {
-			return nil
-		}
+	if !is_at_end(p) &&
+	   current(p).typ != TokenTyp.Rparen &&
+	   current(p).typ != TokenTyp.Rbracket &&
+	   current(p).typ != TokenTyp.Pipe {
+		right, right_ok := parse_concat(p).?
+		if !right_ok do return nil
 
 		node := new(Node, context.temp_allocator)
 		node.typ = ConcatNode {
 			left  = left,
 			right = right,
 		}
-		left = node
+		return node
 	}
 
 	return left
@@ -191,11 +188,18 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		}
 		return node
 	case .Lparen:
-		node, ok := parse_alternation(p).?
+		group_id := p.group_count
+		p.group_count += 1
+		inner, ok := parse_alternation(p).?
 		if !ok do return nil
 		if !consume(p, TokenTyp.Rparen) {
 			p.err = "expected ')'"
 			return nil
+		}
+		node := new(Node, context.temp_allocator)
+		node.typ = CaptureNode {
+			id    = group_id,
+			child = inner,
 		}
 		return node
 	case .Lbracket:
@@ -235,6 +239,13 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 	case .Lbrace:
 		p.err = "unexpected '{' without preceding expression"
 		return nil
+	case .BackRefIdx:
+		idx := int(token.rune - '0')
+		node := new(Node, context.temp_allocator)
+		node.typ = BackrefNode {
+			id = idx,
+		}
+		return node
 	case:
 		p.err = "unexpected token"
 		return nil

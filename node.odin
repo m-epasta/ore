@@ -19,6 +19,8 @@ TypeNode :: union {
 	StarNode,
 	QuestionNode,
 	RangeRepNode,
+	CaptureNode,
+	BackrefNode,
 	ConcatNode,
 	AlternationNode,
 }
@@ -51,6 +53,15 @@ RangeRepNode :: struct {
 	to:          int,
 	using child: ^Node,
 }
+CaptureNode :: struct {
+	id:        int,
+	using child: ^Node,
+}
+
+BackrefNode :: struct {
+	id: int,
+}
+
 ConcatNode :: struct {
 	using left:  ^Node,
 	using right: ^Node,
@@ -58,3 +69,4 @@ ConcatNode :: struct {
 AlternationNode :: struct {
 	exprs: [dynamic]^Node,
 }
+

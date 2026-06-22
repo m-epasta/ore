@@ -1,6 +1,8 @@
 #+private
 package ore
 
+import "core:c/libc"
+
 TokenTyp :: enum {
 	Wildcard, // .
 	Caret, // ^
@@ -21,6 +23,7 @@ TokenTyp :: enum {
 	EverythingButDigit, // \D
 	EverythingButWhitespace, // \S
 	EverythingButWordChar, // \W
+	BackRefIdx, // \:digit:
 	Literal,
 	End, // Special token used by the lexer, does not represent any pattern
 }
@@ -70,7 +73,11 @@ tokenize :: proc(match: string) -> Parser {
 			i += 1
 			if i >= len(match) {
 				append(&tokens, Token{typ = .End})
-				return Parser{err = "expected character after '\\'", tokens = tokens}
+				return Parser {
+					err = "expected character after '\\'",
+					group_count = 1,
+					tokens = tokens,
+				}
 			}
 
 			escaped := rune(match[i])
@@ -94,7 +101,11 @@ tokenize :: proc(match: string) -> Parser {
 			case 'r':
 				append(&tokens, Token{typ = .Literal, rune = '\r'})
 			case:
-				append(&tokens, Token{typ = .Literal, rune = escaped})
+				if libc.isdigit(i32(escaped)) != 0 {
+					append(&tokens, Token{typ = .BackRefIdx, rune = escaped})
+				} else {
+					append(&tokens, Token{typ = .Literal, rune = escaped})
+				}
 			}
 		case:
 			append(&tokens, Token{typ = .Literal, rune = r})
@@ -105,5 +116,5 @@ tokenize :: proc(match: string) -> Parser {
 
 	append(&tokens, Token{typ = .End})
 
-	return Parser{current = 0, tokens = tokens}
+	return Parser{current = 0, group_count = 1, tokens = tokens}
 }

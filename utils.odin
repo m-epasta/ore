@@ -60,6 +60,9 @@ node_is_at_end :: proc(p: ^Parser) -> bool {
 matcher_advance :: proc(matcher: ^Matcher) {
 	_, w := utf8.decode_rune(matcher.input[matcher.pos:])
 	matcher.pos += uintptr(w)
+	for id in matcher.open_groups {
+		matcher.groups[id].end = matcher.pos
+	}
 }
 
 matcher_current :: proc(matcher: ^Matcher) -> rune {
@@ -69,4 +72,28 @@ matcher_current :: proc(matcher: ^Matcher) -> rune {
 
 matcher_is_at_end :: proc(matcher: ^Matcher) -> bool {
 	return cast(int)matcher.pos >= len(matcher.input)
+}
+
+// NOTE: This may be changed, it is used as a bound to not have too large memory footprint
+MAX_CAPTURE_GROUPS :: 32
+
+GroupRange :: struct {
+	start: uintptr,
+	end:   uintptr,
+}
+
+UNSET_GROUP :: max(uintptr)
+
+MatcherSnapshot :: struct {
+	pos:    uintptr,
+	groups: [MAX_CAPTURE_GROUPS]GroupRange,
+}
+
+snapshot_matcher :: proc(m: ^Matcher) -> MatcherSnapshot {
+	return {pos = m.pos, groups = m.groups}
+}
+
+restore_matcher :: proc(m: ^Matcher, snap: MatcherSnapshot) {
+	m.pos = snap.pos
+	m.groups = snap.groups
 }

@@ -5,8 +5,11 @@ import "core:c/libc"
 import "core:slice"
 
 Matcher :: struct {
-	pos:   uintptr,
-	input: string,
+	pos:             uintptr,
+	input:           string,
+	groups:          [MAX_CAPTURE_GROUPS]GroupRange,
+	open_groups:     [dynamic]int,
+	backtrack_stack: [dynamic]MatcherSnapshot,
 }
 
 match :: proc(ast: ^Node, input: string) -> bool {
@@ -14,6 +17,12 @@ match :: proc(ast: ^Node, input: string) -> bool {
 		matcher := new(Matcher, context.temp_allocator)
 		matcher.input = input
 		matcher.pos = uintptr(i)
+		for &g in matcher.groups {
+			g.start = UNSET_GROUP
+			g.end = UNSET_GROUP
+		}
+		matcher.open_groups = make([dynamic]int, context.temp_allocator)
+		matcher.backtrack_stack = make([dynamic]MatcherSnapshot, context.temp_allocator)
 
 		if match_node(matcher, ast) do return true
 	}
@@ -49,6 +58,10 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchQuestionNode(matcher, &typ)
 	case RangeRepNode:
 		return matchRangeRepNode(matcher, &typ)
+	case CaptureNode:
+		return matchCaptureNode(matcher, &typ)
+	case BackrefNode:
+		return matchBackrefNode(matcher, &typ)
 	case ConcatNode:
 		return matchConcatNode(matcher, &typ)
 	case AlternationNode:
@@ -136,78 +149,121 @@ matchEverythingButWordCharNode :: proc(
 }
 
 matchPlusNode :: proc(matcher: ^Matcher, node: ^PlusNode) -> bool {
-	if is_at_end(matcher) || !try_match_rep(matcher, node.child) do return false
+	if !match_node(matcher, node.child) do return false
 
-	for try_match_rep(matcher, node.child) {}
+	for {
+		snap := snapshot_matcher(matcher)
+		if !match_node(matcher, node.child) do break
+		append(&matcher.backtrack_stack, snap)
+	}
 	return true
 }
 
 matchStarNode :: proc(matcher: ^Matcher, node: ^StarNode) -> bool {
-	for try_match_rep(matcher, node.child) {}
+	for {
+		snap := snapshot_matcher(matcher)
+		if !match_node(matcher, node.child) do break
+		append(&matcher.backtrack_stack, snap)
+	}
 	return true
 }
 
 matchQuestionNode :: proc(matcher: ^Matcher, node: ^QuestionNode) -> bool {
-	try_match_rep(matcher, node.child)
-
+	snap := snapshot_matcher(matcher)
+	if match_node(matcher, node.child) do append(&matcher.backtrack_stack, snap)
 	return true
 }
 
 matchRangeRepNode :: proc(matcher: ^Matcher, node: ^RangeRepNode) -> bool {
-	for _ in 0 ..< node.from {
-		if !try_match_rep(matcher, node.child) {
-			return false
-		}
-	}
+	for _ in 0 ..< node.from do if !match_node(matcher, node.child) do return false
+
 
 	if node.to > 0 {
 		for _ in node.from ..< node.to {
-			if !try_match_rep(matcher, node.child) {
-				break
-			}
+			snap := snapshot_matcher(matcher)
+			if !match_node(matcher, node.child) do break
+			append(&matcher.backtrack_stack, snap)
 		}
 	} else {
-		for try_match_rep(matcher, node.child) {}
-	}
-
-	return true
-}
-
-matchConcatNode :: proc(matcher: ^Matcher, node: ^ConcatNode) -> bool {
-	start := matcher.pos
-	if !match_node(matcher, node.left) {
-		matcher.pos = start
-		return false
-	}
-
-	if !match_node(matcher, node.right) {
-		matcher.pos = start
-		return false
-	}
-
-	return true
-}
-
-matchAlternationNode :: proc(matcher: ^Matcher, node: ^AlternationNode) -> bool {
-	for expr in node.exprs {
-		start := matcher.pos
-		if match_node(matcher, expr) {
-			return true
+		for {
+			snap := snapshot_matcher(matcher)
+			if !match_node(matcher, node.child) do break
+			append(&matcher.backtrack_stack, snap)
 		}
-		matcher.pos = start
 	}
+	return true
+}
+
+matchCaptureNode :: proc(matcher: ^Matcher, node: ^CaptureNode) -> bool {
+	mark := len(matcher.backtrack_stack)
+	old_start := matcher.groups[node.id].start
+	old_end := matcher.groups[node.id].end
+
+	matcher.groups[node.id].start = matcher.pos
+	matcher.groups[node.id].end = matcher.pos
+	append(&matcher.open_groups, node.id)
+
+	if match_node(matcher, node.child) {
+		pop(&matcher.open_groups)
+		matcher.groups[node.id].end = matcher.pos
+		return true
+	}
+
+	pop(&matcher.open_groups)
+	matcher.groups[node.id].start = old_start
+	matcher.groups[node.id].end = old_end
+	resize(&matcher.backtrack_stack, mark)
 	return false
 }
 
-try_match_rep :: proc(matcher: ^Matcher, child: ^Node) -> bool {
-	start := matcher.pos
+matchBackrefNode :: proc(matcher: ^Matcher, node: ^BackrefNode) -> bool {
+	id := node.id
+	if id >= MAX_CAPTURE_GROUPS do return false
 
-	if !match_node(matcher, child) {
-		matcher.pos = start
-		return false
+	gr := matcher.groups[id]
+	if gr.start == UNSET_GROUP || gr.end == UNSET_GROUP do return false
+	if gr.end < gr.start do return false
+
+	cap_len := int(gr.end - gr.start)
+	cap_input := matcher.input[gr.start:gr.end]
+
+	if cast(int)matcher.pos + cap_len > len(matcher.input) do return false
+
+	if matcher.input[matcher.pos:matcher.pos + uintptr(cap_len)] == cap_input {
+		matcher.pos += uintptr(cap_len)
+		return true
 	}
 
-	if matcher.pos == start do return false
+	return false
+}
 
-	return true
+matchConcatNode :: proc(matcher: ^Matcher, node: ^ConcatNode) -> bool {
+	mark := len(matcher.backtrack_stack)
+
+	if !match_node(matcher, node.left) do return false
+
+	for {
+		if match_node(matcher, node.right) do return true
+
+		if len(matcher.backtrack_stack) == mark {
+			return false
+		}
+
+		restore_matcher(matcher, pop(&matcher.backtrack_stack))
+	}
+}
+
+matchAlternationNode :: proc(matcher: ^Matcher, node: ^AlternationNode) -> bool {
+	for i in 0 ..< len(node.exprs) {
+		mark := len(matcher.backtrack_stack)
+		snap := snapshot_matcher(matcher)
+
+		if match_node(matcher, node.exprs[i]) {
+			if i + 1 < len(node.exprs) do append(&matcher.backtrack_stack, snap)
+			return true
+		}
+
+		resize(&matcher.backtrack_stack, mark)
+	}
+	return false
 }
