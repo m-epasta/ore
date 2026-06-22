@@ -21,7 +21,7 @@ TokenTyp :: enum {
 	EverythingButWhitespace, // \S
 	EverythingButWordChar, // \W
 	Literal,
-	End,
+	End, // Special token used by the lexer, does not represent any pattern
 }
 
 Token :: struct {
@@ -84,6 +84,12 @@ tokenize :: proc(match: string) -> Parser {
 				append(&tokens, Token{typ = .EverythingButWhitespace})
 			case 'W':
 				append(&tokens, Token{typ = .EverythingButWordChar})
+			case 't':
+				append(&tokens, Token{typ = .Literal, rune = '\t'})
+			case 'n':
+				append(&tokens, Token{typ = .Literal, rune = '\n'})
+			case 'r':
+				append(&tokens, Token{typ = .Literal, rune = '\r'})
 			case:
 				append(&tokens, Token{typ = .Literal, rune = escaped})
 			}

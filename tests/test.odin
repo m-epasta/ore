@@ -14,10 +14,28 @@ literal :: proc(t: ^testing.T) {
 	testing.expect(t, !nok, "Different literal should not match.")
 
 
-
 	sub, serr := ore.matches("abcde", "bcd")
 	testing.expect(t, serr == "", "Expected no error")
 	testing.expect(t, sub, "Literal should match at any position in input.")
+}
+
+@(test)
+specialescapedchar :: proc(t: ^testing.T) {
+	ok, err := ore.matches("\n", "\n")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "newline should be considered as a literal")
+
+	ok2, err2 := ore.matches("\t", "\t")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "tab should be considered as a literal")
+
+	ok3, err3 := ore.matches("\r", "\r")
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, ok3, "carriage return should be considered as a literal")
+
+	ok4, err4 := ore.matches("\r\n", "\r\n")
+	testing.expect(t, err4 == "", "Expected no error")
+	testing.expect(t, ok4, "CRLF should be considered as a literal")
 }
 
 @(test)
@@ -82,6 +100,39 @@ anyword :: proc(t: ^testing.T) {
 	non, nerr := ore.matches("@", "\\w")
 	testing.expect(t, nerr == "", "Expected no error")
 	testing.expect(t, !non, "@ should not match \\w")
+}
+
+@(test)
+everythingbutdigit :: proc(t: ^testing.T) {
+	ok, err := ore.matches("a", "\\D")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "a should match \\D")
+
+	ok2, err2 := ore.matches("0", "\\D")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, !ok2, "0 should not match \\D")
+}
+
+@(test)
+everythingbutws :: proc(t: ^testing.T) {
+	ok, err := ore.matches("a", "\\S")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "a should match \\S")
+
+	ok2, err2 := ore.matches(" ", "\\S")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, !ok2, "space should not match \\S")
+}
+
+@(test)
+everythingbutword :: proc(t: ^testing.T) {
+	ok, err := ore.matches("1", "\\W")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "1 should match \\W")
+
+	ok2, err2 := ore.matches("a", "\\W")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, !ok2, "a should not match \\S")
 }
 
 @(test)
