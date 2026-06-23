@@ -173,6 +173,34 @@ negcharacterclass :: proc(t: ^testing.T) {
 }
 
 @(test)
+classrange :: proc(t: ^testing.T) {
+	ok, err := ore.matches("a", "[a-z]")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "a should match [a-z]")
+
+
+	ok2, err2 := ore.matches("az", "[a-z]+")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "az should match [a-z]+")
+
+	ok3, err3 := ore.matches("4", "[0-9]")
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, ok3, "az should match [0-9]")
+
+	ok4, err4 := ore.matches("a4", "[a-z0-9]")
+	testing.expect(t, err4 == "", "Expected no error")
+	testing.expect(t, ok4, "a4 should match [a-z0-9]")
+
+	ok5, err5 := ore.matches("a", "[a-0]")
+	testing.expect(
+		t,
+		err5 == "both range bounds should be of same type",
+		"Expected invalid range error",
+	)
+	testing.expect(t, !ok5, "a should not match [a-0]")
+}
+
+@(test)
 quantplus :: proc(t: ^testing.T) {
 	ok, err := ore.matches("aaa", "a+")
 	testing.expect(t, err == "", "Expected no error")
@@ -283,25 +311,25 @@ alternation :: proc(t: ^testing.T) {
 @(test)
 error_unclosed_bracket :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", "[")
-	testing.expect(t, err != "", "Expected error for unclosed bracket")
+	testing.expect(t, err == "expected ']'", "Expected error for unclosed bracket")
 }
 
 @(test)
 error_trailing_backslash :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", "a\\")
-	testing.expect(t, err != "", "Expected error for trailing backslash")
+	testing.expect(t, err == "expected character after '\\'", "Expected error for trailing backslash")
 
 	_, err2 := ore.matches("a", "\\")
-	testing.expect(t, err2 != "", "Expected error for lone trailing backslash")
+	testing.expect(t, err2 == "expected character after '\\'", "Expected error for lone trailing backslash")
 }
 
 @(test)
 error_unclosed_paren :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", "(a")
-	testing.expect(t, err != "", "Expected error for unclosed paren")
+	testing.expect(t, err == "expected ')'", "Expected error for unclosed paren")
 
 	_, err2 := ore.matches("a", "(a(b")
-	testing.expect(t, err2 != "", "Expected error for nested unclosed paren")
+	testing.expect(t, err2 == "expected ')'", "Expected error for nested unclosed paren")
 }
 
 // Capture groups & backreferences
@@ -379,11 +407,11 @@ backref_in_alternation :: proc(t: ^testing.T) {
 @(test)
 error_unexpected_token :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", ")")
-	testing.expect(t, err != "", "Expected error for unexpected token")
+	testing.expect(t, err == "unexpected token", "Expected error for unexpected token")
 
 	_, err2 := ore.matches("a", "}")
-	testing.expect(t, err2 != "", "Expected error for unexpected }")
+	testing.expect(t, err2 == "unexpected token", "Expected error for unexpected }")
 
 	_, err3 := ore.matches("a", "{")
-	testing.expect(t, err3 != "", "Expected error for unexpected { without preceding expression")
+	testing.expect(t, err3 == "unexpected '{' without preceding expression", "Expected error for unexpected { without preceding expression")
 }

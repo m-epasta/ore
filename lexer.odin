@@ -110,7 +110,7 @@ tokenize :: proc(match: string) -> Parser {
 			case 'r':
 				append(&tokens, Token{typ = .Literal, rune = '\r'})
 			case:
-				if libc.isdigit(i32(escaped)) != 0 {
+				if isdigit(escaped) {
 					append(&tokens, Token{typ = .BackRefIdx, rune = escaped})
 				} else {
 					append(&tokens, Token{typ = .Literal, rune = escaped})

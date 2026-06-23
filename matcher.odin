@@ -112,7 +112,7 @@ matchEndAnchor :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
 }
 
 matchAnyDigitNode :: proc(matcher: ^Matcher, node: ^AnyDigitNode) -> bool {
-	if is_at_end(matcher) || libc.isdigit(cast(i32)current(matcher)) == 0 do return false
+	if is_at_end(matcher) || !isdigit(current(matcher)) do return false
 
 	advance(matcher)
 	return true
@@ -128,7 +128,7 @@ matchAnyWhitespaceNode :: proc(matcher: ^Matcher, node: ^AnyWhitespaceNode) -> b
 matchAnyWordCharNode :: proc(matcher: ^Matcher, node: ^AnyWordCharNode) -> bool {
 	if is_at_end(matcher) do return false
 	c := current(matcher)
-	if libc.isalpha(cast(i32)c) == 0 && c != '_' do return false
+	if !isalpha(c) do return false
 
 	advance(matcher)
 	return true
@@ -146,7 +146,7 @@ matchCharacterClassNode :: proc(matcher: ^Matcher, node: ^CharacterClassNode) ->
 }
 
 matchEverythingButDigitNode :: proc(matcher: ^Matcher, node: ^EveythingButDigitNode) -> bool {
-	if is_at_end(matcher) || libc.isdigit(cast(i32)current(matcher)) != 0 do return false
+	if is_at_end(matcher) || isdigit(current(matcher)) do return false
 
 	advance(matcher)
 	return true
@@ -168,7 +168,7 @@ matchEverythingButWordCharNode :: proc(
 ) -> bool {
 	if is_at_end(matcher) do return false
 	c := current(matcher)
-	if libc.isalpha(cast(i32)c) != 0 || c == '_' do return false
+	if isalpha(c) do return false
 
 	advance(matcher)
 	return true

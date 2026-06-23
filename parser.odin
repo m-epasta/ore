@@ -110,7 +110,7 @@ parse_factor :: proc(p: ^Parser) -> Maybe(^Node) {
 
 			if current(p).typ == TokenTyp.Literal {
 				r := current(p).rune
-				if libc.isdigit(i32(r)) != 0 {
+				if isdigit(r) {
 					range_rep.from = int(r - '0')
 					advance(p)
 				}
@@ -120,7 +120,7 @@ parse_factor :: proc(p: ^Parser) -> Maybe(^Node) {
 				consume(p, TokenTyp.Comma)
 				if current(p).typ == TokenTyp.Literal {
 					r := current(p).rune
-					if libc.isdigit(i32(r)) != 0 {
+					if isdigit(r) {
 						range_rep.to = int(r - '0')
 						advance(p)
 					}
@@ -232,6 +232,30 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 				else do append(&char_node.matches, tok.rune)
 			case .Literal:
 				append(&char_node.matches, tok.rune)
+			case .Dash:
+				prev := p.tokens[p.current - 2]
+				if prev.typ != TokenTyp.Literal {
+					p.err = "expected a literal before range declaration because of spotted '-' in a class"
+					return nil
+				}
+
+				next, next_ok := advance(p).?
+				if !next_ok {
+					p.err = "expected a literal after '-'"
+					return nil
+				}
+
+				switch {
+				case (isdigit(prev.rune) && isdigit(next.rune)) ||
+				     (isalpha(prev.rune) && isalpha(next.rune)):
+					for r := prev.rune; r <= next.rune; r += 1 {
+						append(&char_node.matches, r)
+					}
+				case:
+					p.err = "both range bounds should be of same type"
+					return nil
+				}
+
 			case:
 				delete(char_node.matches)
 				p.err = "expected literal character in character class"

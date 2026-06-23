@@ -1,7 +1,17 @@
 #+private
 package ore
 
+import "core:c/libc"
 import "core:unicode/utf8"
+
+isdigit :: proc(c: rune) -> bool {
+	return libc.isdigit(i32(c)) != 0
+}
+
+// Include '_'
+isalpha :: proc(c: rune) -> bool {
+	return libc.isalpha(i32(c)) != 0 || c == '_'
+}
 
 advance :: proc {
 	tok_advance,
