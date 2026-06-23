@@ -36,6 +36,8 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchWildcardNode(matcher, &typ)
 	case LiteralNode:
 		return matchLiteralNode(matcher, &typ)
+	case AnchorNode:
+		return matchAnchorNode(matcher, &typ)
 	case AnyDigitNode:
 		return matchAnyDigitNode(matcher, &typ)
 	case AnyWordCharNode:
@@ -83,6 +85,30 @@ matchLiteralNode :: proc(matcher: ^Matcher, node: ^LiteralNode) -> bool {
 	if out do advance(matcher)
 
 	return out
+}
+
+matchAnchorNode :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
+	switch {
+	case node.start && !node.end:
+		return matchStartAnchor(matcher, node)
+	case node.end:
+		return matchEndAnchor(matcher, node)
+	case:
+		// An anchor has to be either start or end
+		break
+	}
+
+	return false
+}
+
+matchStartAnchor :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
+	if is_at_end(matcher) do return false
+
+	return matcher.pos == 0
+}
+
+matchEndAnchor :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
+	return is_at_end(matcher)
 }
 
 matchAnyDigitNode :: proc(matcher: ^Matcher, node: ^AnyDigitNode) -> bool {

@@ -8,6 +8,7 @@ Node :: struct {
 TypeNode :: union {
 	WildcardNode,
 	LiteralNode,
+	AnchorNode,
 	AnyDigitNode,
 	AnyWhitespaceNode,
 	AnyWordCharNode,
@@ -29,6 +30,11 @@ WildcardNode :: struct {}
 LiteralNode :: struct {
 	char: rune,
 }
+AnchorNode :: struct {
+	start: bool,
+	end:   bool,
+}
+// MultilineAnchorNode :: struct {}
 AnyDigitNode :: struct {}
 AnyWhitespaceNode :: struct {}
 AnyWordCharNode :: struct {}
@@ -54,7 +60,7 @@ RangeRepNode :: struct {
 	using child: ^Node,
 }
 CaptureNode :: struct {
-	id:        int,
+	id:          int,
 	using child: ^Node,
 }
 
@@ -69,4 +75,3 @@ ConcatNode :: struct {
 AlternationNode :: struct {
 	exprs: [dynamic]^Node,
 }
-

@@ -157,6 +157,18 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 		node := new(Node, context.temp_allocator)
 		node.typ = WildcardNode{}
 		return node
+	case .Caret:
+		node := new(Node, context.temp_allocator)
+		node.typ = AnchorNode {
+			start = true,
+		}
+		return node
+	case .Dollar:
+		node := new(Node, context.temp_allocator)
+		node.typ = AnchorNode {
+			end = true,
+		}
+		return node
 	case .AnyDigit:
 		node := new(Node, context.temp_allocator)
 		node.typ = AnyDigitNode{}

@@ -58,6 +58,17 @@ wildcard :: proc(t: ^testing.T) {
 }
 
 @(test)
+anchor :: proc(t: ^testing.T) {
+	ok, err := ore.matches("log", "^l.*")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "log should match ^l")
+
+	ok2, err2 := ore.matches("log", ".*g$")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "log should match g$")
+}
+
+@(test)
 anydigit :: proc(t: ^testing.T) {
 	ok, err := ore.matches("1", "\\d")
 	testing.expect(t, err == "", "Expected no error")

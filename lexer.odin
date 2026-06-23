@@ -6,6 +6,9 @@ import "core:c/libc"
 TokenTyp :: enum {
 	Wildcard, // .
 	Caret, // ^
+	Dollar, // $
+	Colon, // :
+	Dash, // -
 	Lparen, // (
 	Rparen, // )
 	Pipe, // |
@@ -23,7 +26,7 @@ TokenTyp :: enum {
 	EverythingButDigit, // \D
 	EverythingButWhitespace, // \S
 	EverythingButWordChar, // \W
-	BackRefIdx, // \:digit:
+	BackRefIdx, // \x
 	Literal,
 	End, // Special token used by the lexer, does not represent any pattern
 }
@@ -47,6 +50,12 @@ tokenize :: proc(match: string) -> Parser {
 			append(&tokens, Token{typ = .Wildcard, rune = '.'})
 		case '^':
 			append(&tokens, Token{typ = .Caret, rune = '^'})
+		case '$':
+			append(&tokens, Token{typ = .Dollar, rune = '$'})
+		case ':':
+			append(&tokens, Token{typ = .Colon, rune = ':'})
+		case '-':
+			append(&tokens, Token{typ = .Dash, rune = '-'})
 		case '(':
 			append(&tokens, Token{typ = .Lparen, rune = '('})
 		case ')':
