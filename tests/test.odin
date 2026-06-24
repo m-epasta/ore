@@ -434,6 +434,13 @@ posix_class_unknown :: proc(t: ^testing.T) {
 	testing.expect(t, err == "unknown posix class: foo", "Expected unknown posix class error")
 }
 
+@(test)
+delimitedliteral :: proc(t: ^testing.T) {
+	ok, err := ore.matches("(C++)", "\\Q(C++)\\E")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "(C++) should match \\Q(C++)\\E")
+}
+
 // Errors
 
 @(test)

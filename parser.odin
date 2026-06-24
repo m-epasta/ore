@@ -200,6 +200,45 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 			char = token.rune,
 		}
 		return node
+	case .StartLiteral:
+		literals := make([dynamic]^Node, context.temp_allocator)
+
+		for current(p).typ != .EndLiteral && current(p).typ != .End {
+			tok, ok := advance(p).?
+			if !ok {
+				p.err = "unexpected end of pattern inside \\Q...\\E"
+				return nil
+			}
+			node := new(Node, context.temp_allocator)
+			node.typ = LiteralNode {
+				char = tok.rune,
+			}
+			append(&literals, node)
+		}
+
+		if !consume(p, TokenTyp.EndLiteral) {
+			p.err = "expected \\E"
+			return nil
+		}
+
+		if len(literals) == 0 {
+			p.err = "empty \\Q...\\E"
+			return nil
+		}
+
+		result := literals[0]
+		for i := 1; i < len(literals); i += 1 {
+			node := new(Node, context.temp_allocator)
+			node.typ = ConcatNode {
+				left  = result,
+				right = literals[i],
+			}
+			result = node
+		}
+		return result
+	case .EndLiteral:
+		p.err = "Parser should not switch on an isolated EndLiteral '\\E'"
+		return nil
 	case .Lparen:
 		group_id := p.group_count
 		p.group_count += 1

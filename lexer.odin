@@ -94,23 +94,27 @@ tokenize :: proc(match: string) -> Parser {
 			escaped := rune(match[i])
 			switch escaped {
 			case 'd':
-				append(&tokens, Token{typ = .AnyDigit})
+				append(&tokens, Token{typ = .AnyDigit, rune = 'd'})
 			case 's':
-				append(&tokens, Token{typ = .AnyWhitespace})
+				append(&tokens, Token{typ = .AnyWhitespace, rune = 's'})
 			case 'w':
-				append(&tokens, Token{typ = .AnyWordChar})
+				append(&tokens, Token{typ = .AnyWordChar, rune = 'w'})
 			case 'D':
-				append(&tokens, Token{typ = .EverythingButDigit})
+				append(&tokens, Token{typ = .EverythingButDigit, rune = 'D'})
 			case 'S':
-				append(&tokens, Token{typ = .EverythingButWhitespace})
+				append(&tokens, Token{typ = .EverythingButWhitespace, rune = 'S'})
 			case 'W':
-				append(&tokens, Token{typ = .EverythingButWordChar})
+				append(&tokens, Token{typ = .EverythingButWordChar, rune = 'W'})
 			case 't':
 				append(&tokens, Token{typ = .Literal, rune = '\t'})
 			case 'n':
 				append(&tokens, Token{typ = .Literal, rune = '\n'})
 			case 'r':
 				append(&tokens, Token{typ = .Literal, rune = '\r'})
+			case 'Q':
+				append(&tokens, Token{typ = .StartLiteral, rune = 'Q'})
+			case 'E':
+				append(&tokens, Token{typ = .EndLiteral, rune = 'E'})
 			case:
 				if isdigit(escaped) {
 					append(&tokens, Token{typ = .BackRefIdx, rune = escaped})
