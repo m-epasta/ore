@@ -28,6 +28,8 @@ TokenTyp :: enum {
 	EverythingButWordChar, // \W
 	BackRefIdx, // \x
 	Literal,
+	StartLiteral,
+	EndLiteral,
 	End, // Special token used by the lexer, does not represent any pattern
 }
 

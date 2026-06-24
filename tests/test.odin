@@ -343,6 +343,54 @@ posix_class :: proc(t: ^testing.T) {
 	ok8, err8 := ore.matches("abc123", "[[:alnum:]]+")
 	testing.expect(t, err8 == "", "Expected no error")
 	testing.expect(t, ok8, "abc123 should match [[:alnum:]]+")
+
+	blank_ok, blank_err := ore.matches(" ", "[[:blank:]]")
+	testing.expect(t, blank_err == "", "Expected no error")
+	testing.expect(t, blank_ok, "space should match [[:blank:]]")
+
+	blank_tab, blank_terr := ore.matches("\t", "[[:blank:]]")
+	testing.expect(t, blank_terr == "", "Expected no error")
+	testing.expect(t, blank_tab, "tab should match [[:blank:]]")
+
+	blank_non, blank_nerr := ore.matches("a", "[[:blank:]]")
+	testing.expect(t, blank_nerr == "", "Expected no error")
+	testing.expect(t, !blank_non, "a should not match [[:blank:]]")
+
+	cntrl_ok, cntrl_err := ore.matches("\x00", "[[:cntrl:]]")
+	testing.expect(t, cntrl_err == "", "Expected no error")
+	testing.expect(t, cntrl_ok, "null should match [[:cntrl:]]")
+
+	cntrl_del, cntrl_derr := ore.matches("\x7f", "[[:cntrl:]]")
+	testing.expect(t, cntrl_derr == "", "Expected no error")
+	testing.expect(t, cntrl_del, "DEL should match [[:cntrl:]]")
+
+	cntrl_non, cntrl_nerr := ore.matches("a", "[[:cntrl:]]")
+	testing.expect(t, cntrl_nerr == "", "Expected no error")
+	testing.expect(t, !cntrl_non, "a should not match [[:cntrl:]]")
+
+	print_ok, print_err := ore.matches(" ", "[[:print:]]")
+	testing.expect(t, print_err == "", "Expected no error")
+	testing.expect(t, print_ok, "space should match [[:print:]]")
+
+	print_tilde, print_terr := ore.matches("~", "[[:print:]]")
+	testing.expect(t, print_terr == "", "Expected no error")
+	testing.expect(t, print_tilde, "~ should match [[:print:]]")
+
+	print_non, print_nerr := ore.matches("\x00", "[[:print:]]")
+	testing.expect(t, print_nerr == "", "Expected no error")
+	testing.expect(t, !print_non, "null should not match [[:print:]]")
+
+	graph_ok, graph_err := ore.matches("!", "[[:graph:]]")
+	testing.expect(t, graph_err == "", "Expected no error")
+	testing.expect(t, graph_ok, "! should match [[:graph:]]")
+
+	graph_tilde, graph_terr := ore.matches("~", "[[:graph:]]")
+	testing.expect(t, graph_terr == "", "Expected no error")
+	testing.expect(t, graph_tilde, "~ should match [[:graph:]]")
+
+	graph_non, graph_nerr := ore.matches(" ", "[[:graph:]]")
+	testing.expect(t, graph_nerr == "", "Expected no error")
+	testing.expect(t, !graph_non, "space should not match [[:graph:]]")
 }
 
 @(test)
@@ -350,6 +398,34 @@ posix_class_neg :: proc(t: ^testing.T) {
 	ok, err := ore.matches("1", "[^[:alpha:]]")
 	testing.expect(t, err == "", "Expected no error")
 	testing.expect(t, ok, "1 should match [^[:alpha:]]")
+
+	non, nerr := ore.matches("a", "[^[:alpha:]]")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !non, "a should not match [^[:alpha:]]")
+
+	neg_digit, dig_err := ore.matches("a", "[^[:digit:]]")
+	testing.expect(t, dig_err == "", "Expected no error")
+	testing.expect(t, neg_digit, "a should match [^[:digit:]]")
+
+	neg_space, sp_err := ore.matches("x", "[^[:space:]]")
+	testing.expect(t, sp_err == "", "Expected no error")
+	testing.expect(t, neg_space, "x should match [^[:space:]]")
+
+	neg_punct, pun_err := ore.matches("a", "[^[:punct:]]")
+	testing.expect(t, pun_err == "", "Expected no error")
+	testing.expect(t, neg_punct, "a should match [^[:punct:]]")
+
+	neg_blank, bl_err := ore.matches("a", "[^[:blank:]]")
+	testing.expect(t, bl_err == "", "Expected no error")
+	testing.expect(t, neg_blank, "a should match [^[:blank:]]")
+
+	neg_cntrl, cn_err := ore.matches("a", "[^[:cntrl:]]")
+	testing.expect(t, cn_err == "", "Expected no error")
+	testing.expect(t, neg_cntrl, "a should match [^[:cntrl:]]")
+
+	neg_graph, gr_err := ore.matches(" ", "[^[:graph:]]")
+	testing.expect(t, gr_err == "", "Expected no error")
+	testing.expect(t, neg_graph, "space should match [^[:graph:]]")
 }
 
 @(test)
