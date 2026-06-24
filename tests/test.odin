@@ -69,6 +69,28 @@ anchor :: proc(t: ^testing.T) {
 }
 
 @(test)
+wordboundary :: proc(t: ^testing.T) {
+	ok, err := ore.matches("copycats", ".*\\bcats\\b")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Word boundary pattern should match.")
+
+	nok, nerr := ore.matches("copycats", "\\bdogs\\b")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Non-matching word boundary should not match.")
+}
+
+@(test)
+notwordboundary :: proc(t: ^testing.T) {
+	ok, err := ore.matches("  \tcat", "\\B  \t\\Bcat")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Word boundary pattern should match.")
+
+	nok, nerr := ore.matches("dogs", "\\Bdogs\\B")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Non-matching word boundary should not match.")
+}
+
+@(test)
 anydigit :: proc(t: ^testing.T) {
 	ok, err := ore.matches("1", "\\d")
 	testing.expect(t, err == "", "Expected no error")

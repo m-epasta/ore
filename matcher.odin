@@ -38,6 +38,8 @@ match_node :: proc(matcher: ^Matcher, node: ^Node) -> bool {
 		return matchLiteralNode(matcher, &typ)
 	case AnchorNode:
 		return matchAnchorNode(matcher, &typ)
+	case WordBoundaryNode:
+		return matchWordBoundaryNode(matcher, &typ)
 	case AnyDigitNode:
 		return matchAnyDigitNode(matcher, &typ)
 	case AnyWordCharNode:
@@ -109,6 +111,32 @@ matchStartAnchor :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
 
 matchEndAnchor :: proc(matcher: ^Matcher, node: ^AnchorNode) -> bool {
 	return is_at_end(matcher)
+}
+
+matchWordBoundaryNode :: proc(matcher: ^Matcher, node: ^WordBoundaryNode) -> bool {
+	pos := matcher.pos
+	for c in node.runes {
+		if is_at_end(matcher) {
+			matcher.pos = pos
+			return false
+		}
+		if current(matcher) != c {
+			matcher.pos = pos
+			return false
+		}
+		advance(matcher)
+	}
+
+	if node.not {
+		for c in node.runes {
+			if isalpha(c) || isdigit(c) {
+				matcher.pos = pos
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
 matchAnyDigitNode :: proc(matcher: ^Matcher, node: ^AnyDigitNode) -> bool {

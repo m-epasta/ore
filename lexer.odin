@@ -27,6 +27,8 @@ TokenTyp :: enum {
 	EverythingButWhitespace, // \S
 	EverythingButWordChar, // \W
 	BackRefIdx, // \x
+	WordBoundary, // \b
+	NotWordBoundary, //  \B
 	Literal,
 	StartLiteral,
 	EndLiteral,
@@ -111,10 +113,16 @@ tokenize :: proc(match: string) -> Parser {
 				append(&tokens, Token{typ = .Literal, rune = '\n'})
 			case 'r':
 				append(&tokens, Token{typ = .Literal, rune = '\r'})
+			case 'v':
+				append(&tokens, Token{typ = .Literal, rune = '\v'})
 			case 'Q':
 				append(&tokens, Token{typ = .StartLiteral, rune = 'Q'})
 			case 'E':
 				append(&tokens, Token{typ = .EndLiteral, rune = 'E'})
+			case 'b':
+				append(&tokens, Token{typ = .WordBoundary, rune = 'b'})
+			case 'B':
+				append(&tokens, Token{typ = .NotWordBoundary, rune = 'B'})
 			case:
 				if isdigit(escaped) {
 					append(&tokens, Token{typ = .BackRefIdx, rune = escaped})

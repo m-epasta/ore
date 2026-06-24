@@ -9,6 +9,7 @@ TypeNode :: union {
 	WildcardNode,
 	LiteralNode,
 	AnchorNode,
+	WordBoundaryNode,
 	AnyDigitNode,
 	AnyWhitespaceNode,
 	AnyWordCharNode,
@@ -33,6 +34,10 @@ LiteralNode :: struct {
 AnchorNode :: struct {
 	start: bool,
 	end:   bool,
+}
+WordBoundaryNode :: struct {
+	runes: [dynamic]rune,
+	not:   bool,
 }
 // MultilineAnchorNode :: struct {}
 AnyDigitNode :: struct {}

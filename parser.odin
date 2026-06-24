@@ -389,6 +389,60 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 			id = idx,
 		}
 		return node
+	case .WordBoundary:
+		runes := make([dynamic]rune, context.temp_allocator)
+		// A wors boundary is delimited by two \b
+		for current(p).typ != TokenTyp.WordBoundary && current(p).typ != TokenTyp.End {
+			c := current(p).rune
+			if !isalpha(c) && !isdigit(c) {
+				p.err = "word boundary contains non digit, non alpha or non undescore character"
+				return nil
+			}
+			append(&runes, c)
+			if !consume(p, TokenTyp.Literal) {
+				p.err = "word boundary is not closed or contains non digit, non alpha or non undescore character"
+				return nil
+			}
+		}
+
+		wbn := WordBoundaryNode {
+			runes = runes,
+			not   = false,
+		}
+
+		if !consume(p, TokenTyp.WordBoundary) {
+			p.err = "word boundary is not closed"
+			return nil
+		}
+
+		node := new(Node, context.temp_allocator)
+		node.typ = wbn
+		return node
+	case .NotWordBoundary:
+		runes := make([dynamic]rune, context.temp_allocator)
+
+		for current(p).typ != TokenTyp.NotWordBoundary && current(p).typ != TokenTyp.End {
+			c := current(p).rune
+			append(&runes, c)
+			if !consume(p, TokenTyp.Literal) {
+				p.err = "not word boundary is not closed"
+				return nil
+			}
+		}
+
+		wbn := WordBoundaryNode {
+			runes = runes,
+			not   = true,
+		}
+
+		if !consume(p, TokenTyp.NotWordBoundary) {
+			p.err = "not word boundary is not closed"
+			return nil
+		}
+
+		node := new(Node, context.temp_allocator)
+		node.typ = wbn
+		return node
 	case:
 		p.err = "unexpected token"
 		return nil
