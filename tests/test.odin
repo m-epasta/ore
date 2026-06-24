@@ -306,6 +306,58 @@ alternation :: proc(t: ^testing.T) {
 	testing.expect(t, !ok4, "4 should not match alternation God|Devil")
 }
 
+@(test)
+posix_class :: proc(t: ^testing.T) {
+	ok, err := ore.matches("a", "[[:alpha:]]")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "a should match [[:alpha:]]")
+
+	nok, nerr := ore.matches("1", "[[:alpha:]]")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "1 should not match [[:alpha:]]")
+
+	ok2, err2 := ore.matches("5", "[[:digit:]]")
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "5 should match [[:digit:]]")
+
+	ok3, err3 := ore.matches("A", "[[:xdigit:]]")
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, ok3, "A should match [[:xdigit:]]")
+
+	ok4, err4 := ore.matches(" ", "[[:space:]]")
+	testing.expect(t, err4 == "", "Expected no error")
+	testing.expect(t, ok4, "space should match [[:space:]]")
+
+	ok5, err5 := ore.matches("!", "[[:punct:]]")
+	testing.expect(t, err5 == "", "Expected no error")
+	testing.expect(t, ok5, "! should match [[:punct:]]")
+
+	ok6, err6 := ore.matches("z", "[[:lower:]]")
+	testing.expect(t, err6 == "", "Expected no error")
+	testing.expect(t, ok6, "z should match [[:lower:]]")
+
+	ok7, err7 := ore.matches("Z", "[[:upper:]]")
+	testing.expect(t, err7 == "", "Expected no error")
+	testing.expect(t, ok7, "Z should match [[:upper:]]")
+
+	ok8, err8 := ore.matches("abc123", "[[:alnum:]]+")
+	testing.expect(t, err8 == "", "Expected no error")
+	testing.expect(t, ok8, "abc123 should match [[:alnum:]]+")
+}
+
+@(test)
+posix_class_neg :: proc(t: ^testing.T) {
+	ok, err := ore.matches("1", "[^[:alpha:]]")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "1 should match [^[:alpha:]]")
+}
+
+@(test)
+posix_class_unknown :: proc(t: ^testing.T) {
+	_, err := ore.matches("a", "[[:foo:]]")
+	testing.expect(t, err == "unknown posix class: foo", "Expected unknown posix class error")
+}
+
 // Errors
 
 @(test)
@@ -317,10 +369,18 @@ error_unclosed_bracket :: proc(t: ^testing.T) {
 @(test)
 error_trailing_backslash :: proc(t: ^testing.T) {
 	_, err := ore.matches("a", "a\\")
-	testing.expect(t, err == "expected character after '\\'", "Expected error for trailing backslash")
+	testing.expect(
+		t,
+		err == "expected character after '\\'",
+		"Expected error for trailing backslash",
+	)
 
 	_, err2 := ore.matches("a", "\\")
-	testing.expect(t, err2 == "expected character after '\\'", "Expected error for lone trailing backslash")
+	testing.expect(
+		t,
+		err2 == "expected character after '\\'",
+		"Expected error for lone trailing backslash",
+	)
 }
 
 @(test)
@@ -413,5 +473,9 @@ error_unexpected_token :: proc(t: ^testing.T) {
 	testing.expect(t, err2 == "unexpected token", "Expected error for unexpected }")
 
 	_, err3 := ore.matches("a", "{")
-	testing.expect(t, err3 == "unexpected '{' without preceding expression", "Expected error for unexpected { without preceding expression")
+	testing.expect(
+		t,
+		err3 == "unexpected '{' without preceding expression",
+		"Expected error for unexpected { without preceding expression",
+	)
 }

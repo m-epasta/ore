@@ -2,6 +2,7 @@
 package ore
 
 import "core:c/libc"
+import "core:strings"
 
 Parser :: struct {
 	current:     uintptr,
@@ -227,6 +228,12 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 				return nil
 			}
 			#partial switch tok.typ {
+			case .Lbracket:
+				if current(p).typ == TokenTyp.Colon {
+					// Part of [: POSIX class opening
+				} else {
+					append(&char_node.matches, tok.rune)
+				}
 			case .Caret:
 				if len(char_node.matches) == 0 do char_node.neg = true
 				else do append(&char_node.matches, tok.rune)
@@ -255,7 +262,68 @@ parse_atom :: proc(p: ^Parser) -> Maybe(^Node) {
 					p.err = "both range bounds should be of same type"
 					return nil
 				}
+			case .Colon:
+				pclass: string
+				builder: strings.Builder
+				strings.builder_init(&builder, context.temp_allocator)
+				for current(p).typ != TokenTyp.Colon {
+					if !isalpha(current(p).rune) {
+						p.err = "Expected letter in between posix class delimeter"
+						return nil
+					}
+					strings.write_rune(&builder, current(p).rune)
+					if !consume(p, TokenTyp.Literal) do return nil
+				}
+				pclass = strings.to_string(builder)
 
+				if !consume(p, TokenTyp.Colon) do return nil
+
+				switch pclass {
+				case "alpha":
+					for r := 'a'; r <= 'z'; r += 1 do append(&char_node.matches, r)
+					for r := 'A'; r <= 'Z'; r += 1 do append(&char_node.matches, r)
+				case "alnum":
+					for r := '0'; r <= '9'; r += 1 do append(&char_node.matches, r)
+					for r := 'a'; r <= 'z'; r += 1 do append(&char_node.matches, r)
+					for r := 'A'; r <= 'Z'; r += 1 do append(&char_node.matches, r)
+				case "digit":
+					for r := '0'; r <= '9'; r += 1 do append(&char_node.matches, r)
+				case "xdigit":
+					for r := '0'; r <= '9'; r += 1 do append(&char_node.matches, r)
+					for r := 'a'; r <= 'f'; r += 1 do append(&char_node.matches, r)
+					for r := 'A'; r <= 'F'; r += 1 do append(&char_node.matches, r)
+				case "lower":
+					for r := 'a'; r <= 'z'; r += 1 do append(&char_node.matches, r)
+				case "upper":
+					for r := 'A'; r <= 'Z'; r += 1 do append(&char_node.matches, r)
+				case "punct":
+					for r in "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~" do append(&char_node.matches, r)
+				case "space":
+					for r in "\t\n\v\f\r " do append(&char_node.matches, r)
+				case "blank":
+					append(&char_node.matches, ' ')
+					append(&char_node.matches, '\t')
+				case "cntrl":
+					for r := 0x00; r <= 0x1F; r += 1 do append(&char_node.matches, rune(r))
+					append(&char_node.matches, rune(0x7F))
+				case "print":
+					for r := ' '; r <= '~'; r += 1 do append(&char_node.matches, r)
+				case "graph":
+					for r := '!'; r <= '~'; r += 1 do append(&char_node.matches, r)
+				case:
+					delete(char_node.matches)
+					p.err = strings.concatenate(
+						{"unknown posix class: ", pclass},
+						context.temp_allocator,
+					)
+					return nil
+				}
+
+				if !consume(p, TokenTyp.Rbracket) {
+					delete(char_node.matches)
+					p.err = "expected ']' after posix class"
+					return nil
+				}
 			case:
 				delete(char_node.matches)
 				p.err = "expected literal character in character class"
