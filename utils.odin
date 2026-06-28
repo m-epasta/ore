@@ -2,14 +2,21 @@
 package ore
 
 import "core:c/libc"
+import "core:unicode"
 import "core:unicode/utf8"
 
-isdigit :: proc(c: rune) -> bool {
+isdigit :: proc(c: rune, unicode_mode: bool = false) -> bool {
+	if unicode_mode {
+		return unicode.is_digit(c)
+	}
 	return libc.isdigit(i32(c)) != 0
 }
 
 // Include '_'
-isalpha :: proc(c: rune) -> bool {
+isalpha :: proc(c: rune, unicode_mode: bool = false) -> bool {
+	if unicode_mode {
+		return unicode.is_alpha(c) || c == '_'
+	}
 	return libc.isalpha(i32(c)) != 0 || c == '_'
 }
 

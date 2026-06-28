@@ -42,7 +42,7 @@ Token :: struct {
 }
 
 // Returns the Parser since it is simply a tokens wrapper
-tokenize :: proc(match: string) -> Parser {
+tokenize :: proc(match: string, flag: bool) -> Parser {
 	tokens: [dynamic]Token
 	i := 0
 
@@ -124,7 +124,7 @@ tokenize :: proc(match: string) -> Parser {
 			case 'B':
 				append(&tokens, Token{typ = .NotWordBoundary, rune = 'B'})
 			case:
-				if isdigit(escaped) {
+				if isdigit(escaped, flag) {
 					append(&tokens, Token{typ = .BackRefIdx, rune = escaped})
 				} else {
 					append(&tokens, Token{typ = .Literal, rune = escaped})

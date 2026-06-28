@@ -10,13 +10,15 @@ Matcher :: struct {
 	groups:          [MAX_CAPTURE_GROUPS]GroupRange,
 	open_groups:     [dynamic]int,
 	backtrack_stack: [dynamic]MatcherSnapshot,
+	unicode_mode:    bool,
 }
 
-match :: proc(ast: ^Node, input: string) -> bool {
+match :: proc(ast: ^Node, input: string, unicode_mode: bool = false) -> bool {
 	for i in 0 ..< len(input) {
 		matcher := new(Matcher, context.temp_allocator)
 		matcher.input = input
 		matcher.pos = uintptr(i)
+		matcher.unicode_mode = unicode_mode
 		for &g in matcher.groups {
 			g.start = UNSET_GROUP
 			g.end = UNSET_GROUP
@@ -129,7 +131,7 @@ matchWordBoundaryNode :: proc(matcher: ^Matcher, node: ^WordBoundaryNode) -> boo
 
 	if node.not {
 		for c in node.runes {
-			if isalpha(c) || isdigit(c) {
+			if isalpha(c, matcher.unicode_mode) || isdigit(c, matcher.unicode_mode) {
 				matcher.pos = pos
 				return false
 			}
@@ -140,7 +142,7 @@ matchWordBoundaryNode :: proc(matcher: ^Matcher, node: ^WordBoundaryNode) -> boo
 }
 
 matchAnyDigitNode :: proc(matcher: ^Matcher, node: ^AnyDigitNode) -> bool {
-	if is_at_end(matcher) || !isdigit(current(matcher)) do return false
+	if is_at_end(matcher) || !isdigit(current(matcher), matcher.unicode_mode) do return false
 
 	advance(matcher)
 	return true
@@ -156,7 +158,7 @@ matchAnyWhitespaceNode :: proc(matcher: ^Matcher, node: ^AnyWhitespaceNode) -> b
 matchAnyWordCharNode :: proc(matcher: ^Matcher, node: ^AnyWordCharNode) -> bool {
 	if is_at_end(matcher) do return false
 	c := current(matcher)
-	if !isalpha(c) do return false
+	if !isalpha(c, matcher.unicode_mode) do return false
 
 	advance(matcher)
 	return true
@@ -174,7 +176,7 @@ matchCharacterClassNode :: proc(matcher: ^Matcher, node: ^CharacterClassNode) ->
 }
 
 matchEverythingButDigitNode :: proc(matcher: ^Matcher, node: ^EveythingButDigitNode) -> bool {
-	if is_at_end(matcher) || isdigit(current(matcher)) do return false
+	if is_at_end(matcher) || isdigit(current(matcher), matcher.unicode_mode) do return false
 
 	advance(matcher)
 	return true
@@ -196,7 +198,7 @@ matchEverythingButWordCharNode :: proc(
 ) -> bool {
 	if is_at_end(matcher) do return false
 	c := current(matcher)
-	if isalpha(c) do return false
+	if isalpha(c, matcher.unicode_mode) do return false
 
 	advance(matcher)
 	return true

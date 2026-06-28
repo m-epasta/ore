@@ -2,8 +2,16 @@ package ore
 
 Error :: string
 
-matches :: proc(input: string, pattern: string) -> (ok: bool, err: Error) {
-	parser := tokenize(pattern)
+matches :: proc(
+	input: string,
+	pattern: string,
+	unicode_mode: bool = false,
+) -> (
+	ok: bool,
+	err: Error,
+) {
+	flag := unicode_mode
+	parser := tokenize(pattern, flag)
 	if parser.err != "" {
 		delete(parser.tokens)
 		return false, parser.err
@@ -19,7 +27,7 @@ matches :: proc(input: string, pattern: string) -> (ok: bool, err: Error) {
 		return false, "unknown parse error"
 	}
 
-	result := match(ast, input)
+	result := match(ast, input, flag)
 	delete(parser.tokens)
 	return result, ""
 }

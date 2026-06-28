@@ -106,6 +106,44 @@ anydigit :: proc(t: ^testing.T) {
 }
 
 @(test)
+unicode_mode_digit :: proc(t: ^testing.T) {
+	ok, err := ore.matches("२", "\\d", true)
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Devanagari digit २ should match \\d in unicode mode")
+
+	ok2, err2 := ore.matches("٣", "\\d", true)
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "Arabic-Indic digit ٣ should match \\d in unicode mode")
+
+	ok3, err3 := ore.matches("5", "\\d", true)
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, ok3, "ASCII digit should still match \\d in unicode mode")
+
+	nok, nerr := ore.matches("२", "\\d")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Devanagari digit should NOT match \\d in ASCII mode")
+
+	nok2, nerr2 := ore.matches("a", "\\d", true)
+	testing.expect(t, nerr2 == "", "Expected no error")
+	testing.expect(t, !nok2, "letter should NOT match \\d in unicode mode")
+}
+
+@(test)
+unicode_mode_not_digit :: proc(t: ^testing.T) {
+	ok, err := ore.matches("२", "^\\D")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Devanagari digit should match \\D in ASCII mode")
+
+	nok, nerr := ore.matches("२", "^\\D", true)
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Devanagari digit should NOT match \\D in unicode mode")
+
+	ok2, err2 := ore.matches("a", "^\\D", true)
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "letter should still match \\D in unicode mode")
+}
+
+@(test)
 anyws :: proc(t: ^testing.T) {
 	ok, err := ore.matches(" ", "\\s")
 	testing.expect(t, err == "", "Expected no error")
@@ -133,6 +171,48 @@ anyword :: proc(t: ^testing.T) {
 	non, nerr := ore.matches("@", "\\w")
 	testing.expect(t, nerr == "", "Expected no error")
 	testing.expect(t, !non, "@ should not match \\w")
+}
+
+@(test)
+unicode_mode_wordchar :: proc(t: ^testing.T) {
+	ok, err := ore.matches("α", "\\w", true)
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Greek alpha should match \\w in unicode mode")
+
+	ok2, err2 := ore.matches("я", "\\w", true)
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "Cyrillic ya should match \\w in unicode mode")
+
+	ok3, err3 := ore.matches("_", "\\w", true)
+	testing.expect(t, err3 == "", "Expected no error")
+	testing.expect(t, ok3, "underscore should still match \\w in unicode mode")
+
+	ok4, err4 := ore.matches("o", "\\w", true)
+	testing.expect(t, err4 == "", "Expected no error")
+	testing.expect(t, ok4, "ASCII letter should still match \\w in unicode mode")
+
+	nok, nerr := ore.matches("α", "\\w")
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Greek alpha should NOT match \\w in ASCII mode")
+
+	nok2, nerr2 := ore.matches("@", "\\w", true)
+	testing.expect(t, nerr2 == "", "Expected no error")
+	testing.expect(t, !nok2, "@ should NOT match \\w in unicode mode")
+}
+
+@(test)
+unicode_mode_not_wordchar :: proc(t: ^testing.T) {
+	ok, err := ore.matches("α", "^\\W")
+	testing.expect(t, err == "", "Expected no error")
+	testing.expect(t, ok, "Greek alpha should match \\W in ASCII mode")
+
+	nok, nerr := ore.matches("α", "^\\W", true)
+	testing.expect(t, nerr == "", "Expected no error")
+	testing.expect(t, !nok, "Greek alpha should NOT match \\W in unicode mode")
+
+	ok2, err2 := ore.matches("@", "^\\W", true)
+	testing.expect(t, err2 == "", "Expected no error")
+	testing.expect(t, ok2, "@ should still match \\W in unicode mode")
 }
 
 @(test)
